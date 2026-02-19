@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String
+  ip        String?
+  device    String?
+  browser   String?
+  city      String?
+  country   String?
+  createdAt DateTime @default(now())
+}
